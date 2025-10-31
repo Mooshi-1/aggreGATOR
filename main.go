@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"mooshi-1/aggregator/internal/config"
 	"os"
+
+	_ "github.com/lib/pq"
 )
 
 type state struct {
