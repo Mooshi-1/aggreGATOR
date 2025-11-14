@@ -66,6 +66,7 @@ func main() {
 	commandsMap.register("register", handlerRegister)
 	commandsMap.register("reset", handlerReset)
 	commandsMap.register("users", handlerUsers)
+	commandsMap.register("agg", handlerAgg)
 
 	entry := os.Args
 	if len(entry) < 2 {

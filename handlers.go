@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
+	"html"
+	"io"
 	"mooshi-1/aggregator/internal/database"
+	"net/http"
 	"os"
 
 	"github.com/google/uuid"
@@ -80,4 +84,68 @@ func handlerUsers(s *state, cmd command) error {
 	}
 
 	return nil
+}
+
+func handlerAgg(s *state, cmd command) error {
+
+	url := "https://www.wagslane.dev/index.xml"
+	filled, err := fetchFeed(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("agg failed: %w", err)
+	}
+	fmt.Print(filled)
+
+	return nil
+}
+
+type RSSFeed struct {
+	Channel struct {
+		Title       string    `xml:"title"`
+		Link        string    `xml:"link"`
+		Description string    `xml:"description"`
+		Item        []RSSItem `xml:"item"`
+	} `xml:"channel"`
+}
+
+type RSSItem struct {
+	Title       string `xml:"title"`
+	Link        string `xml:"link"`
+	Description string `xml:"description"`
+	PubDate     string `xml:"pubDate"`
+}
+
+func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
+
+	req, err := http.NewRequestWithContext(context.Background(), "GET", feedURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("fetch feed failure: %w", err)
+	}
+	req.Header.Set("User-Agent", "gator")
+
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("resp failure: %w", err)
+	}
+
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("io failure: %w", err)
+	}
+
+	filledStruct := &RSSFeed{}
+
+	err = xml.Unmarshal(content, filledStruct)
+	if err != nil {
+		return nil, fmt.Errorf("xml unmarshal error: %w", err)
+	}
+
+	filledStruct.Channel.Title = html.UnescapeString(filledStruct.Channel.Title)
+	filledStruct.Channel.Description = html.UnescapeString(filledStruct.Channel.Description)
+	for _, sli := range filledStruct.Channel.Item {
+		sli.Title = html.UnescapeString(sli.Title)
+		sli.Description = html.UnescapeString(sli.Description)
+	}
+
+	return filledStruct, nil
 }
