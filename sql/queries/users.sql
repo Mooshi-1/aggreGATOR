@@ -8,6 +8,9 @@ VALUES (
 )
 RETURNING *;
 
+-- name: GetUsers :many
+SELECT *
+from users;
 
 -- name: GetUser :one
 SELECT * 
