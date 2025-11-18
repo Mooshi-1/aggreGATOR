@@ -19,3 +19,8 @@ WHERE name = $1;
 
 -- name: Reset :exec
 DELETE from users;
+
+-- name: GetUserByID :one
+SELECT *
+from users
+WHERE id = $1;

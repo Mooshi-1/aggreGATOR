@@ -67,6 +67,8 @@ func main() {
 	commandsMap.register("reset", handlerReset)
 	commandsMap.register("users", handlerUsers)
 	commandsMap.register("agg", handlerAgg)
+	commandsMap.register("addfeed", handleAddFeed)
+	commandsMap.register("feeds", handleFeeds)
 
 	entry := os.Args
 	if len(entry) < 2 {
@@ -91,7 +93,7 @@ func main() {
 
 	err = commandsMap.run(currentState, perform)
 	if err != nil {
-		fmt.Print("error performing action\n")
+		fmt.Print("error performing action, %w\n", err)
 		os.Exit(1)
 	}
 }

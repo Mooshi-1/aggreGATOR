@@ -116,7 +116,7 @@ type RSSItem struct {
 
 func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 
-	req, err := http.NewRequestWithContext(context.Background(), "GET", feedURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", feedURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("fetch feed failure: %w", err)
 	}
@@ -148,4 +148,46 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	}
 
 	return filledStruct, nil
+}
+
+func handleAddFeed(s *state, cmd command) error {
+	usr, err := s.db.GetUser(context.Background(), s.cfg.CurrentUser)
+	if err != nil {
+		return fmt.Errorf("addFeed: getUser: failure|%w", err)
+	}
+
+	if len(cmd.Args) != 2 {
+		return fmt.Errorf("addFeed: args incorrect")
+	}
+
+	fname := cmd.Args[0]
+	url := cmd.Args[1]
+
+	newFeed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
+		ID:     uuid.New(),
+		Name:   fname,
+		Url:    url,
+		UserID: usr.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("addFeed: ceateFeed: failure|%w", err)
+	}
+
+	fmt.Println(newFeed)
+	return nil
+
+}
+
+func handleFeeds(s *state, cmd command) error {
+
+	allFeeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return fmt.Errorf("getallFeeds: falure|%w", err)
+	}
+
+	for _, f := range allFeeds {
+		fmt.Println(f)
+	}
+
+	return nil
 }
