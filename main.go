@@ -71,6 +71,7 @@ func main() {
 	commandsMap.register("follow", middlewareLoggedIn(handleFollow))
 	commandsMap.register("following", middlewareLoggedIn(handleFollowing))
 	commandsMap.register("addfeed", middlewareLoggedIn(handleAddFeed))
+	commandsMap.register("unfollow", middlewareLoggedIn(handleUnfollow))
 
 	entry := os.Args
 	if len(entry) < 2 {
