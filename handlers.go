@@ -173,6 +173,16 @@ func handleAddFeed(s *state, cmd command) error {
 		return fmt.Errorf("addFeed: ceateFeed: failure|%w", err)
 	}
 
+	_, err = s.db.CreateFeedFollow(context.Background(),
+		database.CreateFeedFollowParams{
+			ID:     uuid.New(),
+			UserID: usr.ID,
+			FeedID: newFeed.ID,
+		})
+	if err != nil {
+		return fmt.Errorf("addFeed : create FF : falure %w", err)
+	}
+
 	fmt.Println(newFeed)
 	return nil
 
@@ -190,4 +200,51 @@ func handleFeeds(s *state, cmd command) error {
 	}
 
 	return nil
+}
+
+func handleFollow(s *state, cmd command) error {
+
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("cmd requires 1 arg")
+	}
+	uurl := cmd.Args[0]
+
+	usr, err := s.db.GetUser(context.Background(), s.cfg.CurrentUser)
+	if err != nil {
+		return fmt.Errorf("follow : getusr err %w", err)
+	}
+
+	efeed, err := s.db.GetFeedByURL(context.Background(), uurl)
+	if err != nil {
+		return fmt.Errorf("follow : getfeed err %w", err)
+	}
+
+	ff, err := s.db.CreateFeedFollow(context.Background(),
+		database.CreateFeedFollowParams{
+			ID:     uuid.New(),
+			UserID: usr.ID,
+			FeedID: efeed.ID,
+		})
+	if err != nil {
+		return fmt.Errorf("follow : create ff err %w", err)
+	}
+
+	fmt.Println(ff)
+
+	return nil
+}
+
+func handleFollowing(s *state, cmd command) error {
+
+	ff, err := s.db.GetFeedFollowsForUser(context.Background(), s.cfg.CurrentUser)
+	if err != nil {
+		return fmt.Errorf("following : get ff : %w", err)
+	}
+
+	for _, f := range ff {
+		fmt.Println(f)
+	}
+
+	return nil
+
 }

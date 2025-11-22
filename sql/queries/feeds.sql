@@ -15,3 +15,8 @@ SELECT f.name, f.url, u.name AS user_name
 FROM feeds AS f
 JOIN users as u on f.user_id = u.id
 ;
+
+-- name: GetFeedByURL :one
+SELECT * 
+FROM feeds
+WHERE url = $1;

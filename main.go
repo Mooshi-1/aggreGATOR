@@ -69,6 +69,8 @@ func main() {
 	commandsMap.register("agg", handlerAgg)
 	commandsMap.register("addfeed", handleAddFeed)
 	commandsMap.register("feeds", handleFeeds)
+	commandsMap.register("follow", handleFollow)
+	commandsMap.register("following", handleFollowing)
 
 	entry := os.Args
 	if len(entry) < 2 {
