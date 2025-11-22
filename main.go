@@ -67,10 +67,10 @@ func main() {
 	commandsMap.register("reset", handlerReset)
 	commandsMap.register("users", handlerUsers)
 	commandsMap.register("agg", handlerAgg)
-	commandsMap.register("addfeed", handleAddFeed)
 	commandsMap.register("feeds", handleFeeds)
-	commandsMap.register("follow", handleFollow)
-	commandsMap.register("following", handleFollowing)
+	commandsMap.register("follow", middlewareLoggedIn(handleFollow))
+	commandsMap.register("following", middlewareLoggedIn(handleFollowing))
+	commandsMap.register("addfeed", middlewareLoggedIn(handleAddFeed))
 
 	entry := os.Args
 	if len(entry) < 2 {

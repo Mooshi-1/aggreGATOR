@@ -68,6 +68,7 @@ func handlerReset(s *state, cmd command) error {
 	return nil
 }
 
+// get all users in database, iterate and print
 func handlerUsers(s *state, cmd command) error {
 
 	usr, err := s.db.GetUsers(context.Background())
@@ -150,11 +151,7 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	return filledStruct, nil
 }
 
-func handleAddFeed(s *state, cmd command) error {
-	usr, err := s.db.GetUser(context.Background(), s.cfg.CurrentUser)
-	if err != nil {
-		return fmt.Errorf("addFeed: getUser: failure|%w", err)
-	}
+func handleAddFeed(s *state, cmd command, u database.User) error {
 
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("addFeed: args incorrect")
@@ -167,7 +164,7 @@ func handleAddFeed(s *state, cmd command) error {
 		ID:     uuid.New(),
 		Name:   fname,
 		Url:    url,
-		UserID: usr.ID,
+		UserID: u.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("addFeed: ceateFeed: failure|%w", err)
@@ -176,7 +173,7 @@ func handleAddFeed(s *state, cmd command) error {
 	_, err = s.db.CreateFeedFollow(context.Background(),
 		database.CreateFeedFollowParams{
 			ID:     uuid.New(),
-			UserID: usr.ID,
+			UserID: u.ID,
 			FeedID: newFeed.ID,
 		})
 	if err != nil {
@@ -202,17 +199,12 @@ func handleFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handleFollow(s *state, cmd command) error {
+func handleFollow(s *state, cmd command, u database.User) error {
 
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("cmd requires 1 arg")
 	}
 	uurl := cmd.Args[0]
-
-	usr, err := s.db.GetUser(context.Background(), s.cfg.CurrentUser)
-	if err != nil {
-		return fmt.Errorf("follow : getusr err %w", err)
-	}
 
 	efeed, err := s.db.GetFeedByURL(context.Background(), uurl)
 	if err != nil {
@@ -222,7 +214,7 @@ func handleFollow(s *state, cmd command) error {
 	ff, err := s.db.CreateFeedFollow(context.Background(),
 		database.CreateFeedFollowParams{
 			ID:     uuid.New(),
-			UserID: usr.ID,
+			UserID: u.ID,
 			FeedID: efeed.ID,
 		})
 	if err != nil {
@@ -234,9 +226,9 @@ func handleFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handleFollowing(s *state, cmd command) error {
+func handleFollowing(s *state, cmd command, u database.User) error {
 
-	ff, err := s.db.GetFeedFollowsForUser(context.Background(), s.cfg.CurrentUser)
+	ff, err := s.db.GetFeedFollowsForUser(context.Background(), u.Name)
 	if err != nil {
 		return fmt.Errorf("following : get ff : %w", err)
 	}
