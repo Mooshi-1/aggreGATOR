@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"html"
@@ -9,6 +10,8 @@ import (
 	"mooshi-1/aggregator/internal/database"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -106,7 +109,28 @@ func scrapeFeeds(s *state) error {
 	}
 
 	for _, item := range feed.Channel.Item {
-		fmt.Println(item.Title)
+
+		t, err := time.Parse(time.RFC3339, item.PubDate)
+		if err != nil {
+			fmt.Printf("error parsing time %v", err)
+			t = time.Now()
+		}
+
+		err = s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			Title:       sql.NullString{String: item.Title, Valid: true},
+			Url:         sql.NullString{String: item.Link, Valid: true},
+			Description: sql.NullString{String: item.Description, Valid: true},
+			PublishedAt: sql.NullTime{Time: t, Valid: true},
+			FeedID:      uuid.NullUUID{UUID: next.ID, Valid: true},
+		})
+		if err != nil {
+			s := err.Error()
+			if !strings.Contains(s, "url") {
+				fmt.Println(err)
+			}
+
+		}
 	}
 
 	return nil
@@ -289,6 +313,33 @@ func handleUnfollow(s *state, cmd command, u database.User) error {
 	})
 	if err != nil {
 		return fmt.Errorf("unfollow fail: %w", err)
+	}
+
+	return nil
+}
+
+func handleBrowse(s *state, cmd command, u database.User) error {
+	limit := 2
+	if len(cmd.Args) > 0 {
+		parsed, err := strconv.Atoi(cmd.Args[0])
+		if err != nil {
+			return err
+		}
+		limit = parsed
+	}
+
+	feeds, err := s.db.GetPostsForUser(context.Background(), u.ID)
+	if err != nil {
+		return err
+	}
+
+	count := 0
+	for _, feed := range feeds {
+		fmt.Println(feed.Title)
+		count++
+		if count >= limit {
+			return nil
+		}
 	}
 
 	return nil
