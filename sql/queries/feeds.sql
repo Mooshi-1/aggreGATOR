@@ -27,3 +27,8 @@ SET last_fetched_at = NOW(),
     updated_at = NOW()
 
 WHERE id = $1;
+
+-- name: GetNextFeedFetch :one
+SELECT url, id
+FROM feeds
+ORDER BY updated_at DESC NULLS FIRST;

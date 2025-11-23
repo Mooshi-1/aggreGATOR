@@ -9,6 +9,7 @@ import (
 	"mooshi-1/aggregator/internal/database"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -87,16 +88,46 @@ func handlerUsers(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAgg(s *state, cmd command) error {
+func scrapeFeeds(s *state) error {
 
-	url := "https://www.wagslane.dev/index.xml"
-	filled, err := fetchFeed(context.Background(), url)
+	next, err := s.db.GetNextFeedFetch(context.Background())
 	if err != nil {
-		return fmt.Errorf("agg failed: %w", err)
+		return err
 	}
-	fmt.Print(filled)
+
+	err = s.db.MarkFeedFetched(context.Background(), next.ID)
+	if err != nil {
+		return err
+	}
+
+	feed, err := fetchFeed(context.Background(), next.Url)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range feed.Channel.Item {
+		fmt.Println(item.Title)
+	}
 
 	return nil
+}
+
+func handlerAgg(s *state, cmd command) error {
+
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("timing arg required")
+	}
+
+	number, err := time.ParseDuration(cmd.Args[0])
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Collecting feeds every %v\n", number)
+
+	ticker := time.NewTicker(number)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
 }
 
 type RSSFeed struct {

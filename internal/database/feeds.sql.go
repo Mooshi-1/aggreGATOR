@@ -107,6 +107,24 @@ func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 	return items, nil
 }
 
+const getNextFeedFetch = `-- name: GetNextFeedFetch :one
+SELECT url, id
+FROM feeds
+ORDER BY updated_at DESC NULLS FIRST
+`
+
+type GetNextFeedFetchRow struct {
+	Url string
+	ID  uuid.UUID
+}
+
+func (q *Queries) GetNextFeedFetch(ctx context.Context) (GetNextFeedFetchRow, error) {
+	row := q.db.QueryRowContext(ctx, getNextFeedFetch)
+	var i GetNextFeedFetchRow
+	err := row.Scan(&i.Url, &i.ID)
+	return i, err
+}
+
 const markFeedFetched = `-- name: MarkFeedFetched :exec
 UPDATE feeds
 SET last_fetched_at = NOW(),
